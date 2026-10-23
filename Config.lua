@@ -152,7 +152,8 @@ local function ShowCheck(slider, key, onChange)
     end)
     cb:SetScript("OnLeave", GameTooltip_Hide)
     cb:SetScript("OnClick", function(self)
-        ZS.db[key] = (not self:GetChecked()) and false or nil
+        -- Unticked saves false; ticked clears back to the default (shown).
+        if self:GetChecked() then ZS.db[key] = nil else ZS.db[key] = false end
         onChange()
     end)
     function cb:Refresh() self:SetChecked(ZS.db[key] ~= false) end
@@ -343,7 +344,7 @@ local function Build()
     fillLabel:SetPoint("TOPLEFT", fill, "TOPRIGHT", 4, -4)
     fillLabel:SetJustifyH("LEFT")
     fill:SetScript("OnClick", function(self)
-        ZS.db.fillPvP = (not self:GetChecked()) and false or nil
+        if self:GetChecked() then ZS.db.fillPvP = nil else ZS.db.fillPvP = false end
         ZS.Recolor()
     end)
     function fill:Refresh() self:SetChecked(ZS.db.fillPvP ~= false) end

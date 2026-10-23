@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.3
+- **Fixed:** unticking Zone name, Subzone name or PvP line did nothing; the line stayed. Unticking "Fill in PvP type" didn't switch it off either. Both now save.
+
 ## 0.3.2
 - The show/hide tick boxes moved next to their size sliders: each of Zone name, Subzone name and PvP line has its box in front of the slider's title. The separate Show section is gone and the window is shorter.
 

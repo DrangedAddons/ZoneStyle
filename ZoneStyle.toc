@@ -2,7 +2,7 @@
 ## Title: ZoneStyle
 ## Notes: Move, resize, recolour and retime the zone name popup.
 ## Author: Dranged
-## Version: 0.3.2
+## Version: 0.3.3
 ## X-DrangedAddons-Games: _classic_beta_, _forever_
 ## SavedVariables: ZoneStyleDB
 ## IconTexture: Interface\AddOns\ZoneStyle\icon
