@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.4.0
+- **Font search:** the font button opens a list with a search box. Type to narrow it down, Enter picks the first match. Each font is still shown in its own font, and the current one is gold.
+- **Minimap button:** click it to open the settings, drag it to move it. Minimap button collectors can pick it up (LibDBIcon).
+- **Show minimap button** tick box in the settings. Reset all leaves the minimap button alone.
+
 ## 0.3.3
 - **Fixed:** unticking Zone name, Subzone name or PvP line did nothing; the line stayed. Unticking "Fill in PvP type" didn't switch it off either. Both now save.
 

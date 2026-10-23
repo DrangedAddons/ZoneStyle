@@ -92,11 +92,12 @@ function ZS.SetColor(key, c)
     ZS.Recolor()
 end
 
+-- Resets the popup's look. The minimap button keeps its place and visibility.
 function ZS.ResetAll()
-    local colors = ZS.db.colors
+    local colors, minimap = ZS.db.colors, ZS.db.minimap
     wipe(ZS.db)
     wipe(colors)
-    ZS.db.colors = colors
+    ZS.db.colors, ZS.db.minimap = colors, minimap
     ZS.ApplyLayout()
     ZS.Recolor()
 end
@@ -357,6 +358,7 @@ events:SetScript("OnEvent", function(self, event, name)
     ZoneStyleDB = ZoneStyleDB or {}
     ZS.db = ZoneStyleDB
     ZS.db.colors = ZS.db.colors or {}
+    ZS.db.minimap = ZS.db.minimap or { hide = false }
 
     CaptureBlizz()
     -- Blizzard colours the text inside SetZoneText on every zone change; recolour after it.

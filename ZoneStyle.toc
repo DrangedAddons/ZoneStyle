@@ -2,11 +2,16 @@
 ## Title: ZoneStyle
 ## Notes: Move, resize, recolour and retime the zone name popup.
 ## Author: Dranged
-## Version: 0.3.3
+## Version: 0.4.0
 ## X-DrangedAddons-Games: _classic_beta_, _forever_
 ## SavedVariables: ZoneStyleDB
 ## IconTexture: Interface\AddOns\ZoneStyle\icon
 ## AddonCompartmentFunc: ZoneStyle_OnCompartmentClick
 
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 Core.lua
 Config.lua
+Minimap.lua

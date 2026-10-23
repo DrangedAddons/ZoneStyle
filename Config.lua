@@ -160,46 +160,139 @@ local function ShowCheck(slider, key, onChange)
     return Track(cb)
 end
 
--- Button showing the current font; click for the list (game fonts, then
--- LibSharedMedia ones). Each entry is drawn in its own font.
+-- Font list popup: a search box over a scrolling list (game default, the game's
+-- fonts, then LibSharedMedia ones), each entry drawn in its own font.
+local ROW_H = 20
+local fontPopup
+
+local function SameFont(a, b)
+    if a == nil or b == nil then return a == b end
+    return a:lower() == b:lower()
+end
+
+local function BuildFontPopup(parent)
+    local p = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+    p:SetSize(270, 330)
+    p:SetFrameStrata("FULLSCREEN_DIALOG")
+    p:SetToplevel(true)
+    p:EnableMouse(true)
+    p:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    p:SetBackdropColor(0.05, 0.05, 0.05, 0.97)
+    p:Hide()
+
+    local search = CreateFrame("EditBox", nil, p, "InputBoxTemplate")
+    search:SetSize(236, 20)
+    search:SetPoint("TOPLEFT", 18, -10)
+    search:SetAutoFocus(false)
+    local hint = Text(search, "Search fonts", "GameFontDisable")
+    hint:SetPoint("LEFT", 2, 0)
+
+    local scroll = CreateFrame("ScrollFrame", nil, p, "UIPanelScrollFrameTemplate")
+    scroll:SetPoint("TOPLEFT", 10, -38)
+    scroll:SetPoint("BOTTOMRIGHT", -30, 10)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetSize(228, 1)
+    scroll:SetScrollChild(content)
+
+    local rows, shown = {}, {}
+
+    local function Row(i)
+        local row = rows[i]
+        if row then return row end
+        row = CreateFrame("Button", nil, content)
+        row:SetSize(228, ROW_H)
+        row:SetPoint("TOPLEFT", 0, -(i - 1) * ROW_H)
+        local hl = row:CreateTexture(nil, "HIGHLIGHT")
+        hl:SetAllPoints()
+        hl:SetColorTexture(1, 1, 1, 0.12)
+        row.text = row:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
+        row.text:SetPoint("LEFT", 6, 0)
+        row.text:SetPoint("RIGHT", -6, 0)
+        row.text:SetJustifyH("LEFT")
+        row:SetScript("OnClick", function(self)
+            p.onPick(self.path)
+            p:Hide()
+        end)
+        rows[i] = row
+        return row
+    end
+
+    function p:Fill()
+        local filter = search:GetText():lower()
+        hint:SetShown(filter == "")
+        wipe(shown)
+        local all = ZS.FontList()
+        table.insert(all, 1, { name = "Game default", path = nil })
+        for _, f in ipairs(all) do
+            if filter == "" or f.name:lower():find(filter, 1, true) then shown[#shown + 1] = f end
+        end
+        for i, f in ipairs(shown) do
+            local row = Row(i)
+            row.path = f.path
+            row.text:SetFontObject(GameFontHighlight)
+            if f.path then
+                row.text:SetFont(f.path, 14, "")
+                if not row.text:GetFont() then row.text:SetFontObject(GameFontHighlight) end
+            end
+            row.text:SetText(f.name)
+            if SameFont(f.path, ZS.db.font) then
+                row.text:SetTextColor(1, 0.82, 0)
+            else
+                row.text:SetTextColor(1, 1, 1)
+            end
+            row:Show()
+        end
+        for i = #shown + 1, #rows do rows[i]:Hide() end
+        content:SetHeight(math.max(1, #shown * ROW_H))
+        scroll:SetVerticalScroll(0)
+    end
+
+    search:SetScript("OnTextChanged", function() p:Fill() end)
+    -- Enter picks the first match.
+    search:SetScript("OnEnterPressed", function(self)
+        self:ClearFocus()
+        if shown[1] then
+            p.onPick(shown[1].path)
+            p:Hide()
+        end
+    end)
+    search:SetScript("OnEscapePressed", function(self)
+        self:ClearFocus()
+        p:Hide()
+    end)
+
+    function p:Open(owner, onPick)
+        self.onPick = onPick
+        self:ClearAllPoints()
+        self:SetPoint("TOPLEFT", owner, "BOTTOMLEFT", 0, -2)
+        search:SetText("")
+        self:Show()
+        self:Fill()
+        search:SetFocus()
+    end
+    return p
+end
+
+-- Button showing the current font; click toggles the searchable list.
 local function FontPicker(parent, x, y)
     local b = Button(parent, "", 230, 22, nil)
     b:SetPoint("TOPLEFT", x, y)
-    local function Pick(path)
-        ZS.db.font = path
-        ZS.ApplyLayout()
-        b:Refresh()
-    end
     b:SetScript("OnClick", function(self)
-        local fonts = ZS.FontList()
-        if MenuUtil and MenuUtil.CreateContextMenu then
-            MenuUtil.CreateContextMenu(self, function(_, root)
-                if root.SetScrollMode then root:SetScrollMode(360) end
-                root:CreateRadio("Game default", function() return ZS.db.font == nil end, function() Pick(nil) end)
-                for _, f in ipairs(fonts) do
-                    local radio = root:CreateRadio(f.name,
-                        function() return ZS.db.font and ZS.db.font:lower() == f.path:lower() end,
-                        function() Pick(f.path) end)
-                    if radio.AddInitializer then
-                        radio:AddInitializer(function(button)
-                            local fs = button.fontString or button.Text
-                            if fs then fs:SetFont(f.path, 13, "") end
-                        end)
-                    end
-                end
-            end)
-        else
-            -- No menu API: step to the next font.
-            local cur, nextPath = ZS.db.font, nil
-            for i, f in ipairs(fonts) do
-                if cur and f.path:lower() == cur:lower() then
-                    nextPath = fonts[i + 1] and fonts[i + 1].path
-                    break
-                end
-            end
-            if not cur then nextPath = fonts[1].path end
-            Pick(nextPath)
+        fontPopup = fontPopup or BuildFontPopup(parent)
+        if fontPopup:IsShown() then
+            fontPopup:Hide()
+            return
         end
+        fontPopup:Open(self, function(path)
+            ZS.db.font = path
+            ZS.ApplyLayout()
+            b:Refresh()
+        end)
     end)
     function b:Refresh() self:SetText(ZS.FontName()) end
     return Track(b)
@@ -352,6 +445,14 @@ local function Build()
 
     Text(frame, "Font", "GameFontNormal"):SetPoint("TOPLEFT", R, -384)
     FontPicker(frame, R, -404)
+
+    local mm = CreateFrame("CheckButton", nil, frame, "UICheckButtonTemplate")
+    mm:SetSize(24, 24)
+    mm:SetPoint("TOPLEFT", R - 4, -446)
+    Text(frame, "Show minimap button"):SetPoint("LEFT", mm, "RIGHT", 4, 0)
+    mm:SetScript("OnClick", function(self) ZS.SetMinimapShown(self:GetChecked() and true or false) end)
+    function mm:Refresh() self:SetChecked(not ZS.db.minimap.hide) end
+    Track(mm)
 
     local preview = Button(frame, "Preview", 110, 24, function() ZS.Preview() end)
     preview:SetPoint("BOTTOMLEFT", 24, 20)
