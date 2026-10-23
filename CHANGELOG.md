@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.2
+- The show/hide tick boxes moved next to their size sliders: each of Zone name, Subzone name and PvP line has its box in front of the slider's title. The separate Show section is gone and the window is shorter.
+
 ## 0.3.1
 - New icon: Wowhead's inv_misc_map08 (237387) scaled to 64x64. Used in the addon list, the addon list button, the settings window title, the Options > AddOns page and the DrangedAddons manager.
 

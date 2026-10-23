@@ -52,6 +52,7 @@ local function Slider(parent, label, key, min, max, step, fmt, x, y)
 
     local title = Text(s, label, "GameFontNormalSmall")
     title:SetPoint("BOTTOMLEFT", s, "TOPLEFT", 0, 2)
+    s.title = title
 
     local box = CreateFrame("EditBox", nil, s, "InputBoxTemplate")
     box:SetSize(50, 18)
@@ -137,14 +138,19 @@ local function ColorRow(parent, key, x, y)
     return Track(sw)
 end
 
--- Checkbox for a setting where nil means on.
-local function Check(parent, label, key, x, y, onChange)
-    local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-    cb:SetSize(24, 24)
-    cb:SetPoint("TOPLEFT", x, y)
-    local text = Text(parent, label)
-    text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
-    text:SetJustifyH("LEFT")
+-- Show/hide box in front of a size slider's title: the title moves right to
+-- make room. key is a setting where nil means shown.
+local function ShowCheck(slider, key, onChange)
+    local cb = CreateFrame("CheckButton", nil, slider, "UICheckButtonTemplate")
+    cb:SetSize(20, 20)
+    cb:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", -4, -3)
+    slider.title:SetPoint("BOTTOMLEFT", slider, "TOPLEFT", 18, 2)
+    cb:SetScript("OnEnter", function(self)
+        GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+        GameTooltip:SetText("Show this line")
+        GameTooltip:Show()
+    end)
+    cb:SetScript("OnLeave", GameTooltip_Hide)
     cb:SetScript("OnClick", function(self)
         ZS.db[key] = (not self:GetChecked()) and false or nil
         onChange()
@@ -270,7 +276,7 @@ end
 ---------------------------------------------------------
 local function Build()
     frame = CreateFrame("Frame", "ZoneStyleConfig", UIParent, "BackdropTemplate")
-    frame:SetSize(600, 620)
+    frame:SetSize(600, 560)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetBackdrop({
@@ -309,9 +315,9 @@ local function Build()
     frame.unlock:SetPoint("TOPLEFT", L, -158)
 
     Text(frame, "Text size", "GameFontNormal"):SetPoint("TOPLEFT", L, -198)
-    Slider(frame, "Zone name", "zoneSize", 8, 72, 1, "%d", L, -218)
-    Slider(frame, "Subzone name", "subSize", 8, 72, 1, "%d", L, -260)
-    Slider(frame, "PvP line", "pvpSize", 8, 72, 1, "%d", L, -302)
+    ShowCheck(Slider(frame, "Zone name", "zoneSize", 8, 72, 1, "%d", L, -218), "showZone", ZS.ApplyLayout)
+    ShowCheck(Slider(frame, "Subzone name", "subSize", 8, 72, 1, "%d", L, -260), "showSub", ZS.ApplyLayout)
+    ShowCheck(Slider(frame, "PvP line", "pvpSize", 8, 72, 1, "%d", L, -302), "showPvP", ZS.ApplyLayout)
 
     Text(frame, "Timing (seconds)", "GameFontNormal"):SetPoint("TOPLEFT", L, -350)
     Slider(frame, "Fade in", "fadeIn", 0, 5, 0.1, "%.1f", L, -370)
@@ -343,13 +349,8 @@ local function Build()
     function fill:Refresh() self:SetChecked(ZS.db.fillPvP ~= false) end
     Track(fill)
 
-    Text(frame, "Show", "GameFontNormal"):SetPoint("TOPLEFT", R, -384)
-    Check(frame, "Zone name", "showZone", R - 4, -402, ZS.ApplyLayout)
-    Check(frame, "Subzone name", "showSub", R - 4, -426, ZS.ApplyLayout)
-    Check(frame, "PvP line", "showPvP", R - 4, -450, ZS.ApplyLayout)
-
-    Text(frame, "Font", "GameFontNormal"):SetPoint("TOPLEFT", R, -490)
-    FontPicker(frame, R, -510)
+    Text(frame, "Font", "GameFontNormal"):SetPoint("TOPLEFT", R, -384)
+    FontPicker(frame, R, -404)
 
     local preview = Button(frame, "Preview", 110, 24, function() ZS.Preview() end)
     preview:SetPoint("BOTTOMLEFT", 24, 20)

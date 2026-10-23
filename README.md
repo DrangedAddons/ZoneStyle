@@ -7,7 +7,7 @@ Everything starts out as the game has it. Change only what you want.
 ## Features
 - **Position:** horizontal and vertical sliders, or **Unlock** and drag the popup where you want it. It stays on screen while unlocked.
 - **Text size:** zone name, subzone name and the PvP line ("(Contested Territory)") each have their own size.
-- **Show:** tick boxes to turn the zone name, subzone name and PvP line on or off. Lines below a hidden one move up.
+- **Show:** a tick box beside each size slider turns that line on or off. Lines below a hidden one move up.
 - **Font:** the game's fonts plus any LibSharedMedia fonts your other addons provide.
 - **Colour by zone PvP type:** sanctuary, friendly, hostile, contested, free-for-all, combat zone and no PvP type each have a colour. The zone, subzone and PvP lines all take the colour of the zone's type. **Test** shows your current zone as that type.
 - **Timing:** fade in, hold and fade out, in seconds.
