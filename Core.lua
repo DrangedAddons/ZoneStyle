@@ -108,12 +108,15 @@ function ZS.ApplyLayout()
     ZoneTextFrame:ClearAllPoints()
     ZoneTextFrame:SetPoint("TOP", UIParent, "TOP", ZS.Get("x"), ZS.Get("y"))
 
+    local font = ZS.db.font
     for key, names in pairs(FONTS) do
         local size = ZS.db[key]
         for _, name in ipairs(names) do
-            local info = fontInfo[name]
-            if size then
-                _G[name]:SetFont(info.path, size, info.flags)
+            local fs, info = _G[name], fontInfo[name]
+            if font or size then
+                fs:SetFont(font or info.path, size or ZS.Blizz[key], info.flags)
+                -- A font file that's gone (its addon was removed) leaves no font set.
+                if not fs:GetFont() then fs:SetFont(info.path, size or ZS.Blizz[key], info.flags) end
             elseif info.object then
                 _G[name]:SetFontObject(info.object)
             else
@@ -131,6 +134,7 @@ function ZS.ApplyLayout()
 
     -- SetFontObject can reset the text colour, so put ours back.
     ZS.Recolor()
+    ZS.Relayout()
     if ZS.UpdateMover then ZS.UpdateMover() end
 end
 
@@ -212,15 +216,81 @@ local function FillPvPLine(showZone)
         else
             line = (FACTION_CONTROLLED_TERRITORY or "(%s Territory)"):format(faction)
         end
-        if showZone or lastFilled ~= t then
-            PVPInfoTextString:SetText(line)
-            SubZoneTextString:SetPoint("TOP", "PVPInfoTextString", "BOTTOM", 0, 0)
-        else
-            PVPInfoTextString:SetText("")
-            SubZoneTextString:SetPoint("TOP", "ZoneTextString", "BOTTOM", 0, 0)
-        end
+        PVPInfoTextString:SetText((showZone or lastFilled ~= t) and line or "")
     end
     lastFilled = filled and t or nil
+end
+
+---------------------------------------------------------
+--  SECTION: Showing and hiding lines
+---------------------------------------------------------
+-- showZone / showSub / showPvP: nil means shown.
+function ZS.Shown(key)
+    return ZS.db[key] ~= false
+end
+
+-- Makes switched-off lines invisible and closes the gaps they leave: lines below
+-- a hidden one move up into its place. Runs after every SetZoneText, so it
+-- replaces Blizzard's anchors each time.
+function ZS.Relayout()
+    local zoneOn, subOn, pvpOn = ZS.Shown("showZone"), ZS.Shown("showSub"), ZS.Shown("showPvP")
+    ZoneTextString:SetAlpha(zoneOn and 1 or 0)
+    SubZoneTextString:SetAlpha(subOn and 1 or 0)
+    PVPInfoTextString:SetAlpha(pvpOn and 1 or 0)
+    PVPArenaTextString:SetAlpha(pvpOn and 1 or 0)
+
+    local below = zoneOn and "BOTTOM" or "TOP"
+    PVPInfoTextString:SetPoint("TOP", ZoneTextString, below, 0, 0)
+    local pvpText = PVPInfoTextString:GetText()
+    if pvpOn and pvpText and pvpText ~= "" then
+        SubZoneTextString:SetPoint("TOP", PVPInfoTextString, "BOTTOM", 0, 0)
+    else
+        SubZoneTextString:SetPoint("TOP", ZoneTextString, below, 0, 0)
+    end
+    -- The arena line sits under the subzone; with the subzone hidden it takes its place.
+    PVPArenaTextString:SetPoint("TOP", SubZoneTextString, subOn and "BOTTOM" or "TOP", 0, 0)
+end
+
+---------------------------------------------------------
+--  SECTION: Fonts
+---------------------------------------------------------
+-- The game's own fonts, then any LibSharedMedia fonts other addons registered.
+local GAME_FONTS = {
+    { name = "Friz Quadrata (default)", path = "Fonts\\FRIZQT__.TTF" },
+    { name = "Arial Narrow", path = "Fonts\\ARIALN.TTF" },
+    { name = "Skurri", path = "Fonts\\skurri.ttf" },
+    { name = "Morpheus", path = "Fonts\\MORPHEUS.ttf" },
+}
+
+function ZS.FontList()
+    local list, seen = {}, {}
+    for _, f in ipairs(GAME_FONTS) do
+        list[#list + 1] = f
+        seen[f.path:lower()] = true
+    end
+    local LSM = LibStub and LibStub("LibSharedMedia-3.0", true)
+    if LSM then
+        local extra = {}
+        for name, path in pairs(LSM:HashTable("font")) do
+            if type(path) == "string" and not seen[path:lower()] then
+                seen[path:lower()] = true
+                extra[#extra + 1] = { name = name, path = path }
+            end
+        end
+        table.sort(extra, function(a, b) return a.name:lower() < b.name:lower() end)
+        for _, f in ipairs(extra) do list[#list + 1] = f end
+    end
+    return list
+end
+
+-- Name for the saved font path; nil font means the game's.
+function ZS.FontName()
+    local path = ZS.db.font
+    if not path then return "Game default" end
+    for _, f in ipairs(ZS.FontList()) do
+        if f.path:lower() == path:lower() then return f.name end
+    end
+    return path:match("([^\\/]+)$") or path
 end
 
 -- Colours every zone string for pvpType. With no argument it uses the type being
@@ -269,11 +339,7 @@ function ZS.Preview(pvpType)
     SubZoneTextString:SetText(sub ~= GetZoneText() and sub or "")
     PVPArenaTextString:SetText("")
     PVPInfoTextString:SetText(SampleLine(pvpType))
-    if PVPInfoTextString:GetText() == "" then
-        SubZoneTextString:SetPoint("TOP", "ZoneTextString", "BOTTOM", 0, 0)
-    else
-        SubZoneTextString:SetPoint("TOP", "PVPInfoTextString", "BOTTOM", 0, 0)
-    end
+    ZS.Relayout()
     ZS.Recolor()
     FadingFrame_Show(ZoneTextFrame)
     FadingFrame_Show(SubZoneTextFrame)
@@ -297,6 +363,7 @@ events:SetScript("OnEvent", function(self, event, name)
     hooksecurefunc("SetZoneText", function(showZone)
         ZS.previewType = nil
         FillPvPLine(showZone)
+        ZS.Relayout()
         ZS.Recolor()
     end)
     ZS.ApplyLayout()

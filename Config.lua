@@ -137,6 +137,67 @@ local function ColorRow(parent, key, x, y)
     return Track(sw)
 end
 
+-- Checkbox for a setting where nil means on.
+local function Check(parent, label, key, x, y, onChange)
+    local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
+    cb:SetSize(24, 24)
+    cb:SetPoint("TOPLEFT", x, y)
+    local text = Text(parent, label)
+    text:SetPoint("LEFT", cb, "RIGHT", 4, 0)
+    text:SetJustifyH("LEFT")
+    cb:SetScript("OnClick", function(self)
+        ZS.db[key] = (not self:GetChecked()) and false or nil
+        onChange()
+    end)
+    function cb:Refresh() self:SetChecked(ZS.db[key] ~= false) end
+    return Track(cb)
+end
+
+-- Button showing the current font; click for the list (game fonts, then
+-- LibSharedMedia ones). Each entry is drawn in its own font.
+local function FontPicker(parent, x, y)
+    local b = Button(parent, "", 230, 22, nil)
+    b:SetPoint("TOPLEFT", x, y)
+    local function Pick(path)
+        ZS.db.font = path
+        ZS.ApplyLayout()
+        b:Refresh()
+    end
+    b:SetScript("OnClick", function(self)
+        local fonts = ZS.FontList()
+        if MenuUtil and MenuUtil.CreateContextMenu then
+            MenuUtil.CreateContextMenu(self, function(_, root)
+                if root.SetScrollMode then root:SetScrollMode(360) end
+                root:CreateRadio("Game default", function() return ZS.db.font == nil end, function() Pick(nil) end)
+                for _, f in ipairs(fonts) do
+                    local radio = root:CreateRadio(f.name,
+                        function() return ZS.db.font and ZS.db.font:lower() == f.path:lower() end,
+                        function() Pick(f.path) end)
+                    if radio.AddInitializer then
+                        radio:AddInitializer(function(button)
+                            local fs = button.fontString or button.Text
+                            if fs then fs:SetFont(f.path, 13, "") end
+                        end)
+                    end
+                end
+            end)
+        else
+            -- No menu API: step to the next font.
+            local cur, nextPath = ZS.db.font, nil
+            for i, f in ipairs(fonts) do
+                if cur and f.path:lower() == cur:lower() then
+                    nextPath = fonts[i + 1] and fonts[i + 1].path
+                    break
+                end
+            end
+            if not cur then nextPath = fonts[1].path end
+            Pick(nextPath)
+        end
+    end)
+    function b:Refresh() self:SetText(ZS.FontName()) end
+    return Track(b)
+end
+
 ---------------------------------------------------------
 --  SECTION: Mover
 ---------------------------------------------------------
@@ -209,7 +270,7 @@ end
 ---------------------------------------------------------
 local function Build()
     frame = CreateFrame("Frame", "ZoneStyleConfig", UIParent, "BackdropTemplate")
-    frame:SetSize(600, 540)
+    frame:SetSize(600, 620)
     frame:SetPoint("CENTER")
     frame:SetFrameStrata("DIALOG")
     frame:SetBackdrop({
@@ -229,6 +290,9 @@ local function Build()
 
     local title = Text(frame, "ZoneStyle", "GameFontNormalLarge")
     title:SetPoint("TOP", 0, -18)
+    local getMeta = (C_AddOns and C_AddOns.GetAddOnMetadata) or GetAddOnMetadata
+    local version = Text(frame, "v" .. (getMeta and getMeta(ADDON, "Version") or "?"), "GameFontDisableSmall")
+    version:SetPoint("TOPLEFT", 20, -20)
     local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     close:SetPoint("TOPRIGHT", -6, -6)
 
@@ -274,6 +338,14 @@ local function Build()
     end)
     function fill:Refresh() self:SetChecked(ZS.db.fillPvP ~= false) end
     Track(fill)
+
+    Text(frame, "Show", "GameFontNormal"):SetPoint("TOPLEFT", R, -384)
+    Check(frame, "Zone name", "showZone", R - 4, -402, ZS.ApplyLayout)
+    Check(frame, "Subzone name", "showSub", R - 4, -426, ZS.ApplyLayout)
+    Check(frame, "PvP line", "showPvP", R - 4, -450, ZS.ApplyLayout)
+
+    Text(frame, "Font", "GameFontNormal"):SetPoint("TOPLEFT", R, -490)
+    FontPicker(frame, R, -510)
 
     local preview = Button(frame, "Preview", 110, 24, function() ZS.Preview() end)
     preview:SetPoint("BOTTOMLEFT", 24, 20)
