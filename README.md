@@ -21,4 +21,4 @@ Everything starts out as the game has it. Change only what you want.
 
 Settings are account-wide.
 
-Icon: INV_Misc_Map_01.
+Icon: inv_misc_map08 (Wowhead icon 237387), scaled up by `tools/make_icon.py`.

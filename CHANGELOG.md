@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.3.1
+- New icon: Wowhead's inv_misc_map08 (237387) scaled to 64x64. Used in the addon list, the addon list button, the settings window title, the Options > AddOns page and the DrangedAddons manager.
+
 ## 0.3.0
 - **Show** tick boxes for the zone name, subzone name and PvP line. A hidden line leaves no gap: the lines under it move up into its place.
 - **Font:** pick the font for all the zone text. The list has the game's fonts (Friz Quadrata, Arial Narrow, Skurri, Morpheus) and any font other addons share through LibSharedMedia, each shown in its own font. Sizes and the outline stay as set.
