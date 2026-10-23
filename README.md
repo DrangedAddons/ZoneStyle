@@ -1,6 +1,6 @@
 # ZoneStyle
 
-A World of Warcraft addon for WoW Forever (and the Classic beta). It lets you move, resize, recolour and retime the zone name popup, the big text that appears when you enter a new zone, subzone or city.
+A World of Warcraft addon for WoW Forever. It lets you move, resize, recolour and retime the zone name popup, the big text that appears when you enter a new zone, subzone or city.
 
 Everything starts out as the game has it. Change only what you want.
 

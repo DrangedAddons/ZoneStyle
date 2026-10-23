@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.0.0
+- First live release for WoW Forever. The addon is now listed for Forever only (the Classic beta has ended). No changes in game.
+
 ## 0.4.0
 - **Font search:** the font button opens a list with a search box. Type to narrow it down, Enter picks the first match. Each font is still shown in its own font, and the current one is gold.
 - **Minimap button:** click it to open the settings, drag it to move it. Minimap button collectors can pick it up (LibDBIcon).
